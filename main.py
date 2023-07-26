@@ -2,7 +2,15 @@ from typing import List, Optional
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import mysql.connector
 
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="****",
+  database="axis_vivek"
+)
+mycursor = mydb.cursor()
 app = FastAPI()
 
 origins = [
@@ -42,6 +50,24 @@ async def create_item(request: Request):
     response = requests.request("POST", vapix_url, headers=headers, data=payload)
     #convert string to  object
     json_object = json.loads(response.text)
+    #print(json_object['data']['apiList'])
+    #print(type(json_object['data']['apiList']))
+    for item in json_object['data']['apiList']:
+        #print(item)
+        try:
+            sql = "INSERT INTO getapilist (id, version, name, docLink, status) VALUES (%s, %s, %s, %s, %s)"
+            val = (item['id'],item['version'],item['name'],item['docLink'],item['status'])
+            print(val)
+            mycursor.execute(sql, val)
+            print("Updated ",item['id'])
+            mydb.commit()
+
+            print(mycursor.rowcount, "record inserted.")
+        except:
+            print("An exception occurred")
+         
+
+
     return {"response":json_object}
 
 @app.post('/my_endpoint')
